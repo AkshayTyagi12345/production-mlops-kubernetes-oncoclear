@@ -338,8 +338,8 @@ def main(
             "model_artifact_name": deployment_model_artifact_name,
             "preprocess_pipeline_name": deployment_preprocess_pipeline_name,
             "host_port": deployment_port,
-            "zenml_server_url": deployment_zenml_server,
-            "zenml_api_key": deployment_zenml_api_key,
+            "zenml_server_url": deployment_zenml_server or "",
+            "zenml_api_key": deployment_zenml_api_key or "",
         }
 
         # Run the deployment pipeline

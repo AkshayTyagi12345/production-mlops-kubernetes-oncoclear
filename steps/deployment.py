@@ -22,7 +22,7 @@ from typing import Annotated, Tuple
 import docker
 from zenml import log_metadata, step
 from zenml.logger import get_logger
-from zenml.utils import docker_utils
+
 
 logger = get_logger(__name__)
 
@@ -161,13 +161,12 @@ def build_deployment_image(
             logger.info(f"Copied directory {src} to {dst}")
 
     try:
-        # Build the image using ZenML's utility
-        docker_utils.build_image(
-            image_name=image_name,
+        client = docker.from_env()
+        client.images.build(
+            path=build_context_path,
             dockerfile=dockerfile_path,
-            build_context_root=build_context_path,
-            # Add any custom build options if needed, e.g.:
-            # custom_build_options={"platform": "linux/amd64"}
+            tag=image_name,
+            rm=True,
         )
         logger.info(f"Successfully built Docker image: {image_name}")
     except Exception as e:

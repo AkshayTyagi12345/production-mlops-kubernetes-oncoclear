@@ -15,42 +15,56 @@
 # limitations under the License.
 #
 
-from typing import Union
-
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
-class NADropper:
+class NADropper(BaseEstimator, TransformerMixin):
     """Support class to drop NA values in sklearn Pipeline."""
 
-    def fit(self, *args, **kwargs):
+    def fit(self, X, y=None):
+        self.n_features_in_ = X.shape[1] if hasattr(X, "shape") else None
+        self.fitted_ = True
         return self
 
-    def transform(self, X: Union[pd.DataFrame, pd.Series]):
+    def __sklearn_is_fitted__(self):
+        return True
+
+    def transform(self, X: pd.DataFrame):
         return X.dropna()
 
 
-class ColumnsDropper:
+class ColumnsDropper(BaseEstimator, TransformerMixin):
     """Support class to drop specific columns in sklearn Pipeline."""
 
     def __init__(self, columns):
         self.columns = columns
 
-    def fit(self, *args, **kwargs):
+    def fit(self, X, y=None):
+        self.n_features_in_ = X.shape[1] if hasattr(X, "shape") else None
+        self.fitted_ = True
         return self
 
-    def transform(self, X: Union[pd.DataFrame, pd.Series]):
+    def __sklearn_is_fitted__(self):
+        return True
+
+    def transform(self, X: pd.DataFrame):
         return X.drop(columns=self.columns)
 
 
-class DataFrameCaster:
+class DataFrameCaster(BaseEstimator, TransformerMixin):
     """Support class to cast type back to pd.DataFrame in sklearn Pipeline."""
 
     def __init__(self, columns):
         self.columns = columns
 
-    def fit(self, *args, **kwargs):
+    def fit(self, X, y=None):
+        self.n_features_in_ = X.shape[1] if hasattr(X, "shape") else None
+        self.fitted_ = True
         return self
+
+    def __sklearn_is_fitted__(self):
+        return True
 
     def transform(self, X):
         return pd.DataFrame(X, columns=self.columns)

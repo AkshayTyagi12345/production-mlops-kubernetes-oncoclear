@@ -67,22 +67,19 @@ def data_preprocessor(
     Returns:
         The processed datasets (dataset_trn, dataset_tst) and fitted `Pipeline` object.
     """
-    # We use the sklearn pipeline to chain together multiple preprocessing steps
-    preprocess_pipeline = Pipeline([("passthrough", "passthrough")])
+    # Define the steps for the sklearn pipeline
+    steps = [("passthrough", "passthrough")]
     if drop_na:
-        preprocess_pipeline.steps.append(("drop_na", NADropper()))
+        steps.append(("drop_na", NADropper()))
     if drop_columns:
-        # Drop columns
-        preprocess_pipeline.steps.append(
-            ("drop_columns", ColumnsDropper(drop_columns))
-        )
+        steps.append(("drop_columns", ColumnsDropper(drop_columns)))
     if normalize:
-        # Normalize the data
-        preprocess_pipeline.steps.append(("normalize", MinMaxScaler()))
-    preprocess_pipeline.steps.append(
-        ("cast", DataFrameCaster(dataset_trn.columns))
-    )
-    dataset_trn = preprocess_pipeline.fit_transform(dataset_trn)
+        steps.append(("normalize", MinMaxScaler()))
+    steps.append(("cast", DataFrameCaster(dataset_trn.columns)))
+
+    preprocess_pipeline = Pipeline(steps)
+    preprocess_pipeline.fit(dataset_trn)
+    dataset_trn = preprocess_pipeline.transform(dataset_trn)
     dataset_tst = preprocess_pipeline.transform(dataset_tst)
 
     # Log metadata so we can load it in the inference pipeline
