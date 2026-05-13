@@ -1,0 +1,32 @@
+# Virtual Environment
+onclear-venv/
+venv/
+.venv/
+env/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ZenML local state
+.zen/
+! .zen/config.yaml
+
+# MLflow local state
+mlruns/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# OS files
+.DS_Store
+Thumbs.db

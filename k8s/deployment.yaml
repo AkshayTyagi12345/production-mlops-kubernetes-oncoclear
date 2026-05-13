@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oncoclear-api
+  labels:
+    app: oncoclear-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: oncoclear-api
+  template:
+    metadata:
+      labels:
+        app: oncoclear-api
+    spec:
+      containers:
+      - name: oncoclear-api
+        # The image name follows the pattern from steps/deployment.py
+        image: local-deployment-breast_cancer_classifier:production
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ZENML_STORE_URL
+          # Replace with your actual ZenML Server URL
+          value: "http://zenml-server:8237"
+        - name: ZENML_STORE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: zenml-api-secret
+              key: api_key
+        - name: MODEL_NAME
+          value: "breast_cancer_classifier"
+        - name: MODEL_STAGE
+          value: "production"
+        - name: MODEL_ARTIFACT_NAME
+          value: "sklearn_classifier"
+        - name: PREPROCESS_PIPELINE_NAME
+          value: "preprocess_pipeline"
+        - name: PORT
+          value: "8000"
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "0.5"
+            memory: "256Mi"
