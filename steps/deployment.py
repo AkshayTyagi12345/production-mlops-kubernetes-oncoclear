@@ -162,12 +162,22 @@ def build_deployment_image(
 
     try:
         client = docker.from_env()
-        client.images.build(
+        # Build the image and stream logs
+        build_logs = client.api.build(
             path=build_context_path,
-            dockerfile=dockerfile_path,
+            dockerfile="Dockerfile",
             tag=image_name,
             rm=True,
+            decode=True
         )
+        
+        for chunk in build_logs:
+            if 'stream' in chunk:
+                logger.info(chunk['stream'].strip())
+            elif 'error' in chunk:
+                logger.error(f"Docker build error: {chunk['error']}")
+                raise RuntimeError(f"Docker build failed: {chunk['error']}")
+                
         logger.info(f"Successfully built Docker image: {image_name}")
     except Exception as e:
         logger.error(
@@ -224,16 +234,24 @@ def run_deployment_container(
             f"Docker image '{image_name}' not found. Please build it first."
         )
 
+    # Detect the host ZenML config directory dynamically
+    import zenml.config.global_config
+    host_zenml_dir = zenml.config.global_config.GlobalConfiguration().config_directory
+
     # Define environment variables for the container
     env_vars = {
-        "ZENML_STORE_URL": zenml_server_url,
-        "ZENML_STORE_API_KEY": zenml_api_key,
         "MODEL_NAME": model_name,
         "MODEL_STAGE": model_stage,
         "MODEL_ARTIFACT_NAME": model_artifact_name,
         "PREPROCESS_PIPELINE_NAME": preprocess_pipeline_name,
         "PORT": str(container_port),
+        "ZENML_CONFIG_DIR": host_zenml_dir,
     }
+    
+    if zenml_server_url:
+        env_vars["ZENML_STORE_URL"] = zenml_server_url
+    if zenml_api_key:
+        env_vars["ZENML_STORE_API_KEY"] = zenml_api_key
 
     # Debug: Check the API key (mask it partially for logs)
     if zenml_api_key:
@@ -270,15 +288,24 @@ def run_deployment_container(
         pass
 
     try:
+        # Old volume mapping for reference:
+        # volumes = { host_zenml_dir: {"bind": "/home/app/.zenml", "mode": "rw"} }
+        # volumes = { host_zenml_dir: {"bind": host_zenml_dir, "mode": "rw"}, "/home/dev/.config/zenml": {"bind": "/home/app/.config/zenml", "mode": "rw"} }
+        
+        volumes = {
+            host_zenml_dir: {"bind": host_zenml_dir, "mode": "rw"}
+        }
+
         # Run the container
         logger.info(
-            f"Starting container '{container_name}' with image '{image_name}'"
+            f"Starting container '{container_name}' with image '{image_name}' and mounting {host_zenml_dir}"
         )
         container = client.containers.run(
             image=image_name,
             name=container_name,
             environment=env_vars,
             ports=ports,
+            volumes=volumes,
             detach=True,  # Run in background
             restart_policy={"Name": "unless-stopped"},  # Restart if it crashes
         )

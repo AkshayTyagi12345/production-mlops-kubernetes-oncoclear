@@ -1,5 +1,7 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-slim AS base
+# FROM python:3.9-slim AS base
+# FROM python:3.10-slim AS base
+FROM python:3.13-slim AS base
 
 # Set environment variables to prevent Python from writing pyc files and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -16,7 +18,8 @@ RUN addgroup --system app && \
     adduser --system --ingroup app app && \
     mkdir -p /home/app && \
     chown -R app:app /home/app
-ENV HOME=/home/app
+# ENV HOME=/home/app
+ENV HOME=/home/dev
 
 # --- Build Stage --- (Installs dependencies)
 FROM base AS builder
@@ -33,7 +36,7 @@ FROM base AS runtime
 # COPY --from=builder /opt/venv /opt/venv
 # ENV PATH="/opt/venv/bin:$PATH"
 # If not using venv (copying globally installed packages):
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the application code (main.py, etc.)
@@ -41,7 +44,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY . .
 
 # Set ZENML_CONFIG_DIR to the home directory
-ENV ZENML_CONFIG_DIR=/home/app/.zenml
+ENV ZENML_CONFIG_DIR=/home/dev/.config/zenml
 ENV PYTHONPATH=/app:${PYTHONPATH}
 
 # Ensure directory permissions
@@ -52,8 +55,8 @@ ARG PORT=8000
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
-# Switch to the non-root user for security
-USER app
+# Run as root for local development to avoid permission issues with mounted volumes
+USER root
 
 # Command to run the application using Uvicorn
 # Critical ENV vars (ZENML_*, MODEL_*) must be passed via `docker run -e`

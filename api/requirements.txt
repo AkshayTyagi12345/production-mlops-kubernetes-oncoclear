@@ -1,8 +1,10 @@
 fastapi
 uvicorn[standard]
-scikit-learn # Replace with specific version later if needed
-zenml # Replace with specific version later if needed
+# scikit-learn==1.5.2
+scikit-learn
+zenml[local]==0.94.4
 python-dotenv
+# numpy<2.0.0
 numpy
 pandas
 
