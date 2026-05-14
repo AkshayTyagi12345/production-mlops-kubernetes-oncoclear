@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: breast-cancer-api
+  labels:
+    app: breast-cancer-api
+spec:
+  replicas: 2 # We run 2 copies for high availability!
+  selector:
+    matchLabels:
+      app: breast-cancer-api
+  template:
+    metadata:
+      labels:
+        app: breast-cancer-api
+    spec:
+      containers:
+      - name: api-container
+        image: local-deployment-breast_cancer_classifier:sgd
+        imagePullPolicy: Never # Tell K8s to use the image we just loaded locally
+        ports:
+        - containerPort: 8000
+        env:
+        - name: MODEL_NAME
+          value: "breast_cancer_classifier"
+        - name: MODEL_STAGE
+          value: "sgd"
+        - name: MODEL_ARTIFACT_NAME
+          value: "sklearn_classifier"
+        - name: ZENML_STORE_URL
+          value: "http://host.minikube.internal:8237"
+        - name: ZENML_CONFIG_DIR
+          value: "/home/dev/.config/zenml"
+        volumeMounts:
+        - name: zenml-config
+          mountPath: /home/dev/.config/zenml
+      volumes:
+      - name: zenml-config
+        hostPath:
+          path: /home/dev/.config/zenml
+          type: Directory
